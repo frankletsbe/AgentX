@@ -73,7 +73,7 @@ def main():
     client = InferenceClientModel(model_id=model_name, provider="groq")
         
     # Include all tools: your custom tools + search tool instance
-    tools = [holiday_park_criteria, SearchTool()]
+    tools = [holiday_park_criteria, query_builder, SearchTool()]
     
     # Optional: light instruction so the agent composes tools
     system_prompt = (
