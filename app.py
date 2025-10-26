@@ -1,10 +1,13 @@
+"""
+Holiday Parks Search Agent
+A tool to find holiday parks based on user preferences using AI agents.
+"""
+
 import yaml
-#import os
+from pathlib import Path
+from typing import Dict, Any
 from huggingface_hub import login
 from smolagents import CodeAgent, InferenceClientModel, tool
-
-#from asyncio import tools
-#from huggingface_hub import InferenceClient
 
 # Try WebSearchTool first; fall back to DuckDuckGoSearchTool if needed
 try:
@@ -14,119 +17,226 @@ except ImportError:
     from smolagents import DuckDuckGoSearchTool as SearchTool
 
 
+# Constants
+CONFIG_FILE = Path("config.yaml")
+PROMPT_FILE = Path("prompt.yaml")
 
-CONFIG_FILE = "config.yaml"
-PROMPT_FILE = "prompt.yaml"
+TYPE_MAP = {
+    "site": "site",
+    "camping": "site",
+    "campsite": "site",
+    "camping site": "site",
+    "caravan": "site",
+    "cabin": "cabin"
+}
 
-def get_prompt_from_yaml():
-    try:
-        with open(PROMPT_FILE, "r") as f:
-            cfg = yaml.safe_load(f)
-            return cfg.get("Prompt") if isinstance(cfg, dict) else None
-    except FileNotFoundError:
-        print("Prompt file not found.")
-        return None
-   
-def get_token_from_yaml():
-    try:
-        with open(CONFIG_FILE, "r") as f:
-            cfg = yaml.safe_load(f)
-            return cfg.get("HF_TOKEN") if isinstance(cfg, dict) else None
-    except FileNotFoundError:
-        print("Config file not found.")
-        return None
+
+class ConfigurationError(Exception):
+    """Raised when configuration is missing or invalid."""
+    pass
+
+
+class YAMLConfigLoader:
+    """Handles loading configuration from YAML files."""
     
-def get_modelName_from_yaml():
-    try:
-        with open(CONFIG_FILE, "r") as f:
-            cfg = yaml.safe_load(f)
-            return cfg.get("MODEL_NAME") if isinstance(cfg, dict) else None
-    except FileNotFoundError:
-        print("Config file not found.")
-        return None
+    @staticmethod
+    def _load_yaml_file(file_path: Path) -> Dict[str, Any]:
+        """
+        Load and parse a YAML file.
+        
+        Args:
+            file_path: Path to the YAML file
+            
+        Returns:
+            Parsed YAML content as dictionary
+            
+        Raises:
+            ConfigurationError: If file not found or YAML parsing fails
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = yaml.safe_load(f)
+                if content is None:
+                    raise ConfigurationError(
+                        f"Empty or invalid YAML file: {file_path}"
+                    )
+                if not isinstance(content, dict):
+                    raise ConfigurationError(
+                        f"Invalid YAML format in {file_path}. Expected a dictionary."
+                    )
+                return content
+        except FileNotFoundError:
+            raise ConfigurationError(f"Configuration file not found: {file_path}")
+        except yaml.YAMLError as e:
+            raise ConfigurationError(f"Error parsing YAML file {file_path}: {e}")
     
-def get_searchProvider_from_yaml():
-    try:
-        with open(CONFIG_FILE, "r") as f:
-            cfg = yaml.safe_load(f)
-            return cfg.get("SEARCH_PROVIDER") if isinstance(cfg, dict) else None
-    except FileNotFoundError:
-        print("Config file not found.")
-        return None
+    @staticmethod
+    def get_config_value(file_path: Path, key: str) -> str:
+        """
+        Get a required value from a YAML configuration file.
+        
+        Args:
+            file_path: Path to the YAML file
+            key: Configuration key to retrieve
+            
+        Returns:
+            Configuration value as string
+            
+        Raises:
+            ConfigurationError: If key is missing or file is invalid
+        """
+        config = YAMLConfigLoader._load_yaml_file(file_path)
+        value = config.get(key)
+        
+        if not value:
+            raise ConfigurationError(
+                f"Required configuration '{key}' not found in {file_path}"
+            )
+        
+        return str(value)
+
 
 @tool
-def holiday_park_criteria(state: str, accepts_dogs: bool, near_beach: bool, budget: str, type: str, location: str) -> str:
+def holiday_park_criteria(
+    state: str,
+    accepts_dogs: bool,
+    near_beach: bool,
+    budget: str,
+    type: str,
+    location: str
+) -> str:
     """
     Provides criteria for selecting holiday parks based on user preferences.
+    
     Args:
-        state: The state where the holiday park is located.
-        accepts_dogs: Whether the park accepts dogs.
-        near_beach: Whether the park is near the beach.
-        budget: The budget for the holiday.
-        type: The type of holiday park (e.g., caravan park, camping site).
-        location: Specific location or region within the state.
+        state: The state where the holiday park is located
+        accepts_dogs: Whether the park accepts dogs
+        near_beach: Whether the park is near the beach
+        budget: The budget for the holiday
+        type: The type of holiday park (e.g., caravan park, camping site, cabin)
+        location: Specific location or region within the state
+        
+    Returns:
+        Formatted criteria string
+        
+    Raises:
+        ValueError: If type is not recognized
     """
+    type_norm = TYPE_MAP.get(type.lower())
     
-    type_map = {
-        "site": "site",
-        "camping": "site",
-        "campsite": "site",
-        "camping site": "site",
-        "caravan": "site",
-        "cabin": "cabin"
-    }
-    
-    type_norm = type_map.get(type.lower(), None)
     if not type_norm:
-        return "Error: Type must be 'caravan park', 'camping site', 'cabin', or 'holidayconda  park'."
-    criteria = f"State: {state}, Accepts Dogs: {accepts_dogs}, Near Beach: {near_beach}, Budget: {budget}, Type: {type_norm}, Location: {location}"
+        valid_types = ", ".join(set(TYPE_MAP.keys()))
+        raise ValueError(
+            f"Invalid type '{type}'. Must be one of: {valid_types}"
+        )
+    
+    criteria = (
+        f"State: {state}, "
+        f"Accepts Dogs: {accepts_dogs}, "
+        f"Near Beach: {near_beach}, "
+        f"Budget: {budget}, "
+        f"Type: {type_norm}, "
+        f"Location: {location}"
+    )
+    
     return criteria
+
 
 @tool
 def prompt_builder(criteria: str) -> str:
     """
     Builds a query for the holiday park search based on user preferences.
+    
     Args:
-        criteria: The criteria string generated by holiday_park_criteria tool.
-    """
-    return f"Find holiday or caravan parks that meet the following criteria: {criteria}. Provide a summary of the top options with links to their websites."
-
-
-def main():
-    print("Welcome to the NSW Holiday Parks Review!")
-
-    token = get_token_from_yaml()
-    if token:
-        login(token=token, add_to_git_credential=False)
+        criteria: The criteria string generated by holiday_park_criteria tool
         
-    #client = InferenceClient(api_key=os.environ.get("HF_TOKEN"))    
-    model_name = get_modelName_from_yaml()
-    if not model_name:
-        raise ValueError("MODEL_NAME not found in config.yaml")
-    
-    search_provider = get_searchProvider_from_yaml()
-    if not search_provider:
-        raise ValueError("SEARCH_PROVIDER not found in config.yaml")
-    
-    # Requires huggingface_hub >= 0.28.0 
-    client = InferenceClientModel(model_name, provider=search_provider)
-
-    # Include all tools: your custom tools + search tool instance
-    tools = [holiday_park_criteria, prompt_builder, SearchTool()]
-    
-    # Optional: light instruction so the agent composes tools
+    Returns:
+        Formatted search query
     """
-        system_prompt = (
-        
+    return (
+        f"Find holiday or caravan parks that meet the following criteria: {criteria}. "
+        f"Provide a summary of the top options with links to their websites."
     )
+
+
+def initialize_huggingface(token: str) -> None:
     """
-    query=get_prompt_from_yaml()
-    if not query:
-        raise ValueError("Prompt not found in prompt.yaml")
+    Initialize Hugging Face authentication.
     
-    agent = CodeAgent(model=client, tools=tools)
-    response = agent.run(task =query)
-    print(response)
+    Args:
+        token: Hugging Face API token
+        
+    Raises:
+        ConfigurationError: If authentication fails
+    """
+    try:
+        login(token=token, add_to_git_credential=False)
+        print("✓ Successfully authenticated with Hugging Face")
+    except Exception as e:
+        raise ConfigurationError(f"Failed to authenticate with Hugging Face: {e}")
+
+
+def create_agent(model_name: str, search_provider: str) -> CodeAgent:
+    """
+    Create and configure the AI agent with tools.
+    
+    Args:
+        model_name: Name of the model to use
+        search_provider: Search provider to use
+        
+    Returns:
+        Configured CodeAgent instance
+        
+    Raises:
+        ConfigurationError: If agent creation fails
+    """
+    try:
+        client = InferenceClientModel(model_name, provider=search_provider)
+        tools = [holiday_park_criteria, prompt_builder, SearchTool()]
+        agent = CodeAgent(model=client, tools=tools)
+        print(f"✓ Agent created with model: {model_name}")
+        return agent
+    except Exception as e:
+        raise ConfigurationError(f"Failed to create agent: {e}")
+
+
+def main() -> None:
+    """Main entry point for the Holiday Parks Review application."""
+    print("=" * 60)
+    print("Welcome to the NSW Holiday Parks Review!")
+    print("=" * 60)
+    
+    try:
+        # Load configuration
+        config_loader = YAMLConfigLoader()
+        
+        token = config_loader.get_config_value(CONFIG_FILE, "HF_TOKEN")
+        model_name = config_loader.get_config_value(CONFIG_FILE, "MODEL_NAME")
+        search_provider = config_loader.get_config_value(CONFIG_FILE, "SEARCH_PROVIDER")
+        query = config_loader.get_config_value(PROMPT_FILE, "Prompt")
+        
+        # Initialize services
+        initialize_huggingface(token)
+        agent = create_agent(model_name, search_provider)
+        
+        # Run agent
+        print("\nProcessing your query...")
+        print("-" * 60)
+        response = agent.run(task=query)
+        
+        print("\n" + "=" * 60)
+        print("RESULTS:")
+        print("=" * 60)
+        print(response)
+        
+    except ConfigurationError as e:
+        print(f"\n❌ Configuration Error: {e}")
+        return
+    except Exception as e:
+        print(f"\n❌ Unexpected Error: {e}")
+        print("Please check your configuration and try again.")
+        return
+
 
 if __name__ == "__main__":
     main()
