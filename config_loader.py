@@ -2,7 +2,7 @@
 
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from constants import ConfigurationError, PROMPT_FILE, PROMPT_TEMPLATE_FILE
 
@@ -112,3 +112,14 @@ class YAMLConfigLoader:
             )
         
         return str(value)
+    
+    @staticmethod
+    def get_config_list(file_path: Path, key: str) -> List[str]:
+        """Get a list value from YAML config."""
+        config = YAMLConfigLoader._load_yaml_file(file_path)
+        value = config.get(key, [])
+        
+        if not isinstance(value, list):
+            raise ConfigurationError(f"'{key}' must be a list in {file_path}")
+        
+        return value

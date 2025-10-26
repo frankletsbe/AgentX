@@ -7,6 +7,14 @@ CONFIG_FILE = Path("config.yaml")
 PROMPT_FILE = Path("prompt_holidaypark.yaml")
 PROMPT_TEMPLATE_FILE = Path("prompt_template.yaml")
 
+# Available tool mappings
+AVAILABLE_TOOLS = {
+    "holiday_park_criteria": "tools.holiday_park_criteria",
+    "prompt_builder": "tools.prompt_builder",
+    "WebSearchTool": "smolagents.WebSearchTool",
+    "DuckDuckGoSearchTool": "smolagents.DuckDuckGoSearchTool"
+}
+
 # Type mappings
 # constants.py
 TYPE_MAP = {

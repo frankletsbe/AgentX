@@ -1,3 +1,9 @@
 HF_TOKEN: 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
-MODEL_NAME: "Qwen/Qwen3-4B-Thinking-2507"
+MODEL_NAME: "meta-llama/Llama-3.3-70B-Instruct"
 SEARCH_PROVIDER: "nscale"
+
+# Tool configuration
+enabled_tools:
+  - holiday_park_criteria
+  - prompt_builder
+  - WebSearchTool

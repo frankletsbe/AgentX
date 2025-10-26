@@ -1,6 +1,6 @@
 """
-Holiday Parks Search Agent
-A tool to find holiday parks based on user preferences using AI agents.
+Generic AI Agent Application
+Loads configuration, prompt, and tools dynamically.
 """
 
 from constants import ConfigurationError, CONFIG_FILE
@@ -21,22 +21,29 @@ def main() -> None:
         token = config_loader.get_config_value(CONFIG_FILE, "HF_TOKEN")
         model_name = config_loader.get_config_value(CONFIG_FILE, "MODEL_NAME")
         search_provider = config_loader.get_config_value(CONFIG_FILE, "SEARCH_PROVIDER")
+        enabled_tools = config_loader.get_config_list(CONFIG_FILE, "enabled_tools")
           
         # Load prompt with template
         query = config_loader.load_prompt_with_template()
 
       
 
-        # Debug: Print the formatted prompt
+# Debug output
         print("\n" + "=" * 60)
-        print("FORMATTED PROMPT BEING SENT TO AGENT:")
+        print("CONFIGURATION:")
+        print("=" * 60)
+        print(f"Model: {model_name}")
+        print(f"Provider: {search_provider}")
+        print(f"Tools: {', '.join(enabled_tools)}")
+        print("\n" + "=" * 60)
+        print("PROMPT:")
         print("=" * 60)
         print(query)
         print("=" * 60 + "\n")
         
         # Initialize services
         initialize_huggingface(token)
-        agent = create_agent(model_name, search_provider)
+        agent = create_agent(model_name, search_provider,enabled_tools)
         
         # Run agent
         print("\nProcessing your query...")

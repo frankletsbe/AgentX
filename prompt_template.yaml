@@ -3,13 +3,11 @@ Prompt_Template: |
   
   TASK: {task}
   
-  SPECIFIC QUERY:
-  Find the best value for money holiday caravan park in NSW South Coast 
-  (between Wollongong and Batemans Bay) that accepts dogs all year round 
-  and is located near a beach.
-  
   REQUIREMENTS:
   {requirements}
+
+  TOOLS AVAILABLE:
+  {tools_description}
   
   SEARCH INSTRUCTIONS:
   {search_instructions}
