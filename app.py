@@ -1,6 +1,11 @@
 import yaml
+#import os
 from huggingface_hub import login
 from smolagents import CodeAgent, InferenceClientModel, tool
+
+#from asyncio import tools
+#from huggingface_hub import InferenceClient
+
 # Try WebSearchTool first; fall back to DuckDuckGoSearchTool if needed
 try:
     from smolagents import WebSearchTool
@@ -11,18 +16,40 @@ except ImportError:
 
 
 CONFIG_FILE = "config.yaml"
-query = (
-    "What's the best value for money holiday caravan park, where I can book a site in NSW South Coast"
-    "(between Nowra and Batemans Bay), that accepts dogs all year round and is located near a beach?"
-)
+PROMPT_FILE = "prompt.yaml"
 
-
+def get_prompt_from_yaml():
+    try:
+        with open(PROMPT_FILE, "r") as f:
+            cfg = yaml.safe_load(f)
+            return cfg.get("Prompt") if isinstance(cfg, dict) else None
+    except FileNotFoundError:
+        print("Prompt file not found.")
+        return None
    
 def get_token_from_yaml():
     try:
         with open(CONFIG_FILE, "r") as f:
             cfg = yaml.safe_load(f)
             return cfg.get("HF_TOKEN") if isinstance(cfg, dict) else None
+    except FileNotFoundError:
+        print("Config file not found.")
+        return None
+    
+def get_modelName_from_yaml():
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            cfg = yaml.safe_load(f)
+            return cfg.get("MODEL_NAME") if isinstance(cfg, dict) else None
+    except FileNotFoundError:
+        print("Config file not found.")
+        return None
+    
+def get_searchProvider_from_yaml():
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            cfg = yaml.safe_load(f)
+            return cfg.get("SEARCH_PROVIDER") if isinstance(cfg, dict) else None
     except FileNotFoundError:
         print("Config file not found.")
         return None
@@ -51,7 +78,7 @@ def holiday_park_criteria(state: str, accepts_dogs: bool, near_beach: bool, budg
     
     type_norm = type_map.get(type.lower(), None)
     if not type_norm:
-        return "Error: Type must be 'caravan park', 'camping site', 'cabin', or 'holiday park'."
+        return "Error: Type must be 'caravan park', 'camping site', 'cabin', or 'holidayconda  park'."
     criteria = f"State: {state}, Accepts Dogs: {accepts_dogs}, Near Beach: {near_beach}, Budget: {budget}, Type: {type_norm}, Location: {location}"
     return criteria
 
@@ -72,23 +99,33 @@ def main():
     if token:
         login(token=token, add_to_git_credential=False)
         
-    model_name = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
+    #client = InferenceClient(api_key=os.environ.get("HF_TOKEN"))    
+    model_name = get_modelName_from_yaml()
+    if not model_name:
+        raise ValueError("MODEL_NAME not found in config.yaml")
+    
+    search_provider = get_searchProvider_from_yaml()
+    if not search_provider:
+        raise ValueError("SEARCH_PROVIDER not found in config.yaml")
+    
+    # Requires huggingface_hub >= 0.28.0 
+    client = InferenceClientModel(model_name, provider=search_provider)
 
-    # Requires huggingface_hub >= 0.28.0 for provider=
-    client = InferenceClientModel(model_id=model_name, provider="groq")
-        
     # Include all tools: your custom tools + search tool instance
     tools = [holiday_park_criteria, prompt_builder, SearchTool()]
     
     # Optional: light instruction so the agent composes tools
-    system_prompt = (
-        "You can compose tools. If the user asks for holiday parks, first call "
-        "holiday_park_criteria to build criteria, then query_builder to make a search string, "
-        "then use the web search tool to find results. Summarize succinctly with sources."
+    """
+        system_prompt = (
+        
     )
-
+    """
+    query=get_prompt_from_yaml()
+    if not query:
+        raise ValueError("Prompt not found in prompt.yaml")
+    
     agent = CodeAgent(model=client, tools=tools)
-    response = agent.run(query)
+    response = agent.run(task =query)
     print(response)
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+Prompt: > 
+  "What's the best value for money holiday caravan park, where I can book a site in NSW South Coast (between Wollongong and Batemans Bay), 
+    that accepts dogs all year round and is located near a beach?
+  You can compose tools. If the user asks for holiday parks, first call
+    holiday_park_criteria to build criteria, then query_builder to make a search string,
+    then use the web search tool to find results. Summarize succinctly with sources."
