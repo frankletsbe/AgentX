@@ -1,0 +1,25 @@
+Prompt: |
+  Role: {role}
+  
+  Task: {task}
+  
+  Search Criteria:
+  - State: {state}
+  - Pet-friendly: {accepts_dogs}
+  - Beach proximity: {near_beach}
+  - Budget: {budget}
+  - Type: {type}
+  
+  Requirements:
+  {requirements}
+  
+  Output: {output_format}
+
+PromptTemplates:
+  role: "Expert Australian holiday park travel advisor"
+  task: "Find and recommend suitable holiday parks"
+  requirements: |
+    - Match ALL criteria
+    - Current information only
+    - Include website links
+  output_format: "Top 3-5 options with details and reasoning"
