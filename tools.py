@@ -3,6 +3,11 @@
 from smolagents import tool
 from constants import TYPE_MAP
 
+def _clean_type(s: str) -> str:
+    s = s.strip().lower()
+    # collapse multiple spaces
+    s = " ".join(s.split())
+    return s
 
 @tool
 def holiday_park_criteria(
@@ -32,11 +37,11 @@ def holiday_park_criteria(
     """
     type_norm = TYPE_MAP.get(type.lower())
     
+    t = _clean_type(type)
+    type_norm = TYPE_MAP.get(t)
     if not type_norm:
-        valid_types = ", ".join(set(TYPE_MAP.keys()))
-        raise ValueError(
-            f"Invalid type '{type}'. Must be one of: {valid_types}"
-        )
+        valid_types = ", ".join(sorted(set(TYPE_MAP.keys())))
+        raise ValueError(f"Invalid type '{type}'. Must be one of: {valid_types}")
     
     criteria = (
         f"State: {state}, "

@@ -24,28 +24,29 @@ class YAMLConfigLoader:
         try:
             # Load template values
             with open(PROMPT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
-                template = yaml.safe_load(f)
-                if not isinstance(template, dict):
+                template_config = yaml.safe_load(f)
+                if not isinstance(template_config, dict):
                     raise ConfigurationError("Invalid template format")
             
             # Load prompt structure
             with open(PROMPT_FILE, "r", encoding="utf-8") as f:
-                prompt_config = yaml.safe_load(f)
-                if not isinstance(prompt_config, dict):
+                prompt_values = yaml.safe_load(f)
+                if not isinstance(prompt_values, dict):
                     raise ConfigurationError("Invalid prompt format")
             
             # Get prompt template string
-            prompt_template = prompt_config.get("Prompt", "")
+            prompt_template = template_config.get("Prompt_Template", "")
             
             # Merge with overrides if present
-            overrides = prompt_config.get("overrides", {})
-            template_values = {
-                **template, 
+            overrides = template_config.get("overrides", {})
+            _values = {
+                **template_config, 
                 **{k: v for k, v in overrides.items() if v is not None}
             }
             
             # Format the prompt
-            formatted_prompt = prompt_template.format(**template_values)
+            formatted_prompt = prompt_template.format(**prompt_values, **_values)
+
             
             return formatted_prompt
             

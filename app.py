@@ -21,9 +21,18 @@ def main() -> None:
         token = config_loader.get_config_value(CONFIG_FILE, "HF_TOKEN")
         model_name = config_loader.get_config_value(CONFIG_FILE, "MODEL_NAME")
         search_provider = config_loader.get_config_value(CONFIG_FILE, "SEARCH_PROVIDER")
-        
+          
         # Load prompt with template
         query = config_loader.load_prompt_with_template()
+
+      
+
+        # Debug: Print the formatted prompt
+        print("\n" + "=" * 60)
+        print("FORMATTED PROMPT BEING SENT TO AGENT:")
+        print("=" * 60)
+        print(query)
+        print("=" * 60 + "\n")
         
         # Initialize services
         initialize_huggingface(token)

@@ -1,25 +1,18 @@
-Prompt: |
-  Role: {role}
+Prompt_Template: |
+  ROLE: {role}
   
-  Task: {task}
+  TASK: {task}
   
-  Search Criteria:
-  - State: {state}
-  - Pet-friendly: {accepts_dogs}
-  - Beach proximity: {near_beach}
-  - Budget: {budget}
-  - Type: {type}
+  SPECIFIC QUERY:
+  Find the best value for money holiday caravan park in NSW South Coast 
+  (between Wollongong and Batemans Bay) that accepts dogs all year round 
+  and is located near a beach.
   
-  Requirements:
+  REQUIREMENTS:
   {requirements}
   
-  Output: {output_format}
-
-PromptTemplates:
-  role: "Expert Australian holiday park travel advisor"
-  task: "Find and recommend suitable holiday parks"
-  requirements: |
-    - Match ALL criteria
-    - Current information only
-    - Include website links
-  output_format: "Top 3-5 options with details and reasoning"
+  SEARCH INSTRUCTIONS:
+  {search_instructions}
+  
+  OUTPUT FORMAT:
+  {output_format}
