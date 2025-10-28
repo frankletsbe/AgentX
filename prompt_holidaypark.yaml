@@ -1,7 +1,7 @@
 role: "Expert Australian holiday park travel advisor with deep knowledge of NSW destinations"
 
 task: |
-  "Find the best value for money holiday caravan park in NSW South Coast 
+  "Find the best value for money holiday caravan park in NSW South Coast for a campervan, 6 meter length by 2 meter width
   (between Wollongong and Batemans Bay) that accepts dogs all year round 
   and is located near a beach. The park should offer cabins or powered sites"
 
