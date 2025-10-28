@@ -2,7 +2,7 @@
 
 import yaml
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from constants import ConfigurationError, PROMPT_FILE, PROMPT_TEMPLATE_FILE
 
@@ -71,6 +71,10 @@ class YAMLConfigLoader:
         Raises:
             ConfigurationError: If file not found or YAML parsing fails
         """
+        
+        if not file_path.exists():
+            raise ConfigurationError(f"Configuration file not found: {file_path}")
+        
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = yaml.safe_load(f)
@@ -89,7 +93,7 @@ class YAMLConfigLoader:
             raise ConfigurationError(f"Error parsing YAML file {file_path}: {e}")
     
     @staticmethod
-    def get_config_value(file_path: Path, key: str) -> str:
+    def get_config_value(file_path: Path, key: str, default: str = "") -> str:
         """
         Get a required value from a YAML configuration file.
         
@@ -103,8 +107,13 @@ class YAMLConfigLoader:
         Raises:
             ConfigurationError: If key is missing or file is invalid
         """
+        
+       
         config = YAMLConfigLoader._load_yaml_file(file_path)
-        value = config.get(key)
+        value = config.get(key, default)
+        return str(value) if value is not None else default
+    
+        
         
         if not value:
             raise ConfigurationError(
@@ -114,12 +123,25 @@ class YAMLConfigLoader:
         return str(value)
     
     @staticmethod
-    def get_config_list(file_path: Path, key: str) -> List[str]:
-        """Get a list value from YAML config."""
+    def get_config_list(file_path: Path, key: str, default: Optional[List[str]] = None) -> List[str]:
+        """
+        Get a list configuration value from a YAML file.
+        
+        Args:
+            file_path: Path to the YAML file
+            key: Configuration key to retrieve
+            default: Default value if key not found
+
+        Returns:
+            List of configuration values
+        """
+        if default is None:
+            default = []
+
         config = YAMLConfigLoader._load_yaml_file(file_path)
-        value = config.get(key, [])
-        
-        if not isinstance(value, list):
-            raise ConfigurationError(f"'{key}' must be a list in {file_path}")
-        
-        return value
+        value = config.get(key, default)
+        return value if isinstance(value, list) else default
+
+        config = YAMLConfigLoader._load_yaml_file(file_path)
+        value = config.get(key, default)
+        return value if isinstance(value, list) else default

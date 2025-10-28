@@ -18,7 +18,7 @@ def main() -> None:
         # Load configuration
         config_loader = YAMLConfigLoader()
         
-        token = config_loader.get_config_value(CONFIG_FILE, "HF_TOKEN")
+        #token = config_loader.get_config_value(CONFIG_FILE, "HF_TOKEN")
         model_name = config_loader.get_config_value(CONFIG_FILE, "MODEL_NAME")
         search_provider = config_loader.get_config_value(CONFIG_FILE, "SEARCH_PROVIDER")
         enabled_tools = config_loader.get_config_list(CONFIG_FILE, "enabled_tools")
@@ -42,9 +42,9 @@ def main() -> None:
         print("=" * 60 + "\n")
         
         # Initialize services
-        initialize_huggingface(token)
-        agent = create_agent(model_name, search_provider,enabled_tools)
-        
+        initialize_huggingface()
+        agent = create_agent(enabled_tools)
+
         # Run agent
         print("\nProcessing your query...")
         print("-" * 60)

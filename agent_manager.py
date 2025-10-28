@@ -1,36 +1,48 @@
 """Agent initialization and management."""
 
 import importlib
-from typing import List, Any
+from typing import List, Any, Optional, Dict
 from huggingface_hub import login
-from smolagents import CodeAgent, InferenceClientModel
-
-from constants import ConfigurationError, AVAILABLE_TOOLS
-#from tools import holiday_park_criteria, prompt_builder
-
-# Try WebSearchTool first; fall back to DuckDuckGoSearchTool if needed
-try:
-    from smolagents import WebSearchTool
-    SearchTool = WebSearchTool
-except ImportError:
-    from smolagents import DuckDuckGoSearchTool as SearchTool
+from smolagents import  ToolCallingAgent, InferenceClientModel,  CodeAgent, DuckDuckGoSearchTool, FinalAnswerPromptTemplate, FinalAnswerTool, FinalAnswerStep
 
 
-def initialize_huggingface(token: str) -> None:
-    """
-    Initialize Hugging Face authentication.
+from constants import (
+    ConfigurationError, 
+    AVAILABLE_TOOLS, 
+    HF_TOKEN, 
+    MODEL_NAME, 
+    SEARCH_PROVIDER,
+    validate_env_variables
+)
+
+
+class CustomInferenceClientModel(InferenceClientModel):
+    """Custom wrapper to fix tool_choice parameter."""
     
-    Args:
-        token: Hugging Face API token
+    def __call__(self, messages, stop_sequences=None, grammar=None, tools=None, tool_choice=None):
+        """Override to force tool_choice to 'auto' or 'none'."""
+        # Force tool_choice to be either 'auto' or 'none'
+        if tool_choice is not None and tool_choice not in ["auto", "none"]:
+            tool_choice = "auto"
         
-    Raises:
-        ConfigurationError: If authentication fails
-    """
+        return super().__call__(
+            messages=messages,
+            stop_sequences=stop_sequences,
+            grammar=grammar,
+            tools=tools,
+            tool_choice=tool_choice
+        )
+
+
+def initialize_huggingface() -> None:
+    """Initialize Hugging Face authentication using environment variables."""
     try:
-        login(token=token, add_to_git_credential=False)
+        validate_env_variables()
+        login(token=HF_TOKEN, add_to_git_credential=False)
         print("✓ Successfully authenticated with Hugging Face")
     except Exception as e:
-        raise ConfigurationError(f"Failed to authenticate with Hugging Face: {e}")
+        raise ConfigurationError(f"Failed to authenticate: {e}")
+
 
 def load_tool(tool_name: str) -> Any:
     """
@@ -55,7 +67,6 @@ def load_tool(tool_name: str) -> Any:
         module = importlib.import_module(module_name)
         tool = getattr(module, attr_name)
         
-        # If it's a class (like SearchTool), instantiate it
         if isinstance(tool, type):
             return tool()
         return tool
@@ -63,13 +74,13 @@ def load_tool(tool_name: str) -> Any:
     except (ImportError, AttributeError) as e:
         raise ConfigurationError(f"Failed to load tool '{tool_name}': {e}")
 
-def create_agent(model_name: str, search_provider: str, tool_names: List[str]) -> CodeAgent:
+
+def create_agent(tool_names: List[str]) -> CodeAgent:
     """
-    Create and configure the AI agent with tools.
+    Create and configure the AI agent with specified tools.
+    Uses MODEL_NAME and SEARCH_PROVIDER from environment variables.
     
     Args:
-        model_name: Name of the model to use
-        search_provider: Search provider to use
         tool_names: List of tool names to enable
         
     Returns:
@@ -82,13 +93,51 @@ def create_agent(model_name: str, search_provider: str, tool_names: List[str]) -
         # Load tools dynamically
         tools = [load_tool(name) for name in tool_names]
         
-        # Create agent
-        client = InferenceClientModel(model_name, provider=search_provider)
+       
+        
+        # Create custom model client with fixed tool_choice
+        client = CustomInferenceClientModel(MODEL_NAME, provider=SEARCH_PROVIDER)
         agent = CodeAgent(model=client, tools=tools)
-        print(f"✓ Agent created with model: {model_name}")
+        
+        print(f"✓ Agent created with model: {MODEL_NAME}")
         print(f"✓ Loaded tools: {', '.join(tool_names)}")
+        print(f"✓ Agent type: {type(agent).__name__}")
         
         return agent
-    
+        
     except Exception as e:
         raise ConfigurationError(f"Failed to create agent: {e}")
+    
+    """def create_agent(tool_names: List[str]) -> ToolCallingAgent:
+        
+        Create and configure the AI agent with specified tools.
+        Uses MODEL_NAME and SEARCH_PROVIDER from environment variables.
+        
+        Args:
+            tool_names: List of tool names to enable
+            
+        Returns:
+            Configured ToolCallingAgent instance
+            
+        Raises:
+            ConfigurationError: If agent creation fails
+        
+        try:
+            # Load tools dynamically
+            tools = [load_tool(name) for name in tool_names]
+            
+        
+            
+            # Create custom model client with fixed tool_choice
+            client = CustomInferenceClientModel(MODEL_NAME, provider=SEARCH_PROVIDER)
+            agent = ToolAgent(model=client, tools=tools)
+            
+            print(f"✓ Agent created with model: {MODEL_NAME}")
+            print(f"✓ Loaded tools: {', '.join(tool_names)}")
+            print(f"✓ Agent type: {type(agent).__name__}")
+            
+            return agent
+            
+        except Exception as e:
+            raise ConfigurationError(f"Failed to create agent: {e}")
+    """

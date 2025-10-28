@@ -1,11 +1,23 @@
 """Constants and custom exceptions for the Holiday Parks application."""
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
-# File paths
-CONFIG_FILE = Path("config.yaml")
-PROMPT_FILE = Path("prompt_holidaypark.yaml")
-PROMPT_TEMPLATE_FILE = Path("prompt_template.yaml")
+# Load environment variables from .env file
+load_dotenv()
+
+# Project paths
+PROJECT_ROOT = Path(__file__).parent
+CONFIG_FILE = PROJECT_ROOT / "config.yaml"
+PROMPT_FILE = PROJECT_ROOT / "prompt_holidaypark.yaml"
+PROMPT_TEMPLATE_FILE = PROJECT_ROOT / "prompt_template.yaml"
+
+# Environment variables
+HF_TOKEN = os.getenv("HF_TOKEN")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-Coder-32B-Instruct")
+SEARCH_PROVIDER = os.getenv("SEARCH_PROVIDER", "openai")
+
 
 # Available tool mappings
 AVAILABLE_TOOLS = {
@@ -38,6 +50,17 @@ TYPE_MAP = {
     "ensuite cabin": "cabin",
 }
 
+def validate_env_variables():
+    """Validate that required environment variables are set."""
+    if not HF_TOKEN:
+        raise ConfigurationError(
+            "HF_TOKEN not found in environment variables. "
+            "Please add it to your .env file."
+        )
+    
+    print("✓ Environment variables loaded successfully")
+    print(f"  - Model: {MODEL_NAME}")
+    print(f"  - Search Provider: {SEARCH_PROVIDER}")
 
 class ConfigurationError(Exception):
     """Raised when configuration is missing or invalid."""
