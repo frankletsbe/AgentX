@@ -1,0 +1,33 @@
+Flask==3.1.2
+gradio==5.49.1
+gradio_client==1.13.3
+huggingface-hub==0.35.3
+ipykernel @ file:///C:/miniconda3/conda-bld/ipykernel_1757583382905/work
+ipython @ file:///C:/miniconda3/conda-bld/ipython_1759328513319/work
+jupyter_client @ file:///C:/b/abs_149bw133if/croot/jupyter_client_1737570986926/work
+jupyter_core @ file:///C:/b/abs_7c6fipznw3/croot/jupyter_core_1751991383524/work
+numpy==2.3.4
+packaging @ file:///C:/miniconda3/conda-bld/packaging_1761049096285/work
+pandas==2.3.3
+smolagents
+PyYAML
+python-dotenv
+pytest
+flake8
+black
+
+
+"""
+Each module either directly imports or uses features from:
+
+smolagents (core agent framework and tool suite)
+
+PyYAML (for YAML config and prompt loading)
+
+python-dotenv (reads .env environment variables)
+
+flask (web application interface in web_app.py)
+
+gradio (Gradio interface in Gradio.py for chat/demo)
+
+No pandas/numpy detected in reviewed files, so only include if used for future data work.
