@@ -1,0 +1,12 @@
+================================================================================
+AI DEVELOPMENT TEAM
+================================================================================
+
+Team Members:
+  - Business Analyst: Analyzes requirements and creates specifications
+  - Software Developer: Writes code based on specifications
+  - UX Designer: Reviews user experience and interface
+  - QA Tester: Tests code and provides feedback
+  - Manager: Coordinates the team workflow
+================================================================================
+

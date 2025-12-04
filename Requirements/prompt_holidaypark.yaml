@@ -1,7 +1,7 @@
 role: "Expert Australian holiday park travel advisor with deep knowledge of NSW destinations"
 
 task: |
-  "Find the best value for money holiday caravan park in NSW South Coast for a campervan, 6 meter length by 2 meter width
+  "Build a webpage that finds the best value for money holiday caravan park in NSW South Coast for a campervan, 6 meter length by 2 meter width
   (between Wollongong and Batemans Bay) that accepts dogs all year round 
   and is located near a beach. The park should offer cabins or powered sites"
 
@@ -16,6 +16,15 @@ tools_description: |
   - holiday_park_criteria: Structure search parameters
   - prompt_builder: Build search query from criteria
   - WebSearchTool: Search the web for information
+
+input_format:
+  1. Australian State
+  2. Entry Date and Exit Date greater than today and, 
+    of at least 1-day and no longer than 30 days. 
+    Should not be able to select exit date a year into future.
+  3. Type of site (e.g., powered, unpowered, ensuite).
+  4. Campervan dimensions (length and width) must be specified.
+  5. Dog freindly.
 
 output_format: |
   Provide top 3-5 options with:

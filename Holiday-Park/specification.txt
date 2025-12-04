@@ -1,0 +1,5 @@
+================================================================================
+SPECIFICATION DOCUMENT
+================================================================================
+
+The specification document for the holiday tourist park booking web page includes functional requirements, non-functional requirements, technical considerations, user interface requirements, and testing requirements.

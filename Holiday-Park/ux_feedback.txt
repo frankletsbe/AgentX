@@ -1,0 +1,5 @@
+================================================================================
+UX DESIGNER FEEDBACK
+================================================================================
+
+Redesign the application with a GUI, add guidance and feedback throughout the booking process, and implement accessibility features.
