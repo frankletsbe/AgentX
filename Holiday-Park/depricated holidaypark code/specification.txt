@@ -1,0 +1,118 @@
+================================================================================
+SPECIFICATION DOCUMENT
+================================================================================
+
+
+DETAILED SPECIFICATION DOCUMENT
+
+1. FUNCTIONAL REQUIREMENTS:
+
+Core Features:
+- Allow users to search for caravan parks between Wollongong and Batemans Bay that match all specified criteria: campervan-friendly, 6m x 2m size compatibility, dog-friendly all year round, near a beach, and offer cabins or powered sites.
+- Display search results with park details, including name, address, contact information, website link, pricing, and user reviews/ratings.
+- Prioritize parks with a star rating of 4 or higher.
+- Verify that the caravan park information is up-to-date within the last 12 months.
+- Provide direct links to official websites for booking or further inquiries.
+
+User Stories:
+1. As a user, I want to search for holiday caravan parks in NSW South Coast, so I can find options that suit my campervan dimensions, travel requirements, and preferences.
+2. As a user, I want to filter results by specific criteria (dog friendliness, beach proximity, powered site availability, etc.) to ensure the parks match my needs.
+3. As a user, I want to view detailed park information (e.g., pricing, amenities, reviews), so I can make an informed decision.
+4. As a user, I want direct links to the official websites, so I can book or contact the park easily.
+
+Acceptance Criteria:
+1. The system must allow users to input search criteria: vehicle size, dog-friendly requirement, and location range (Wollongong to Batemans Bay).
+2. The system must return a list of parks that match all criteria, sorted by review ratings.
+3. Each park result must include a name, address, approximate pricing (if available), and a verified star rating (4+ stars).
+4. Each park must have a clickable link to the official website for more details or booking.
+5. Information must be verified to ensure it is not older than 12 months.
+
+---
+
+2. NON-FUNCTIONAL REQUIREMENTS:
+
+Performance Expectations:
+- The system must return search results within 3 seconds for queries involving up to 50 caravan parks.
+- The search functionality should scale to handle up to 1,000 simultaneous users during peak usage times.
+- The database should support updates for at least 10 new caravan parks per week.
+
+Security Considerations:
+- All user input data (e.g., search queries) must be validated and sanitized to prevent SQL injection or cross-site scripting (XSS) attacks.
+- Connections to the application's backend and third-party APIs must use secure HTTPS protocols.
+- Sensitive user data, such as personalized search history (if stored), must be encrypted at rest and in transit.
+
+Scalability Needs:
+- The system must be scalable to support an expanding database as new caravan parks are added or information is refreshed.
+- Implement load balancing to ensure consistent performance under heavy usage.
+- Create modular components for easy addition of new features, such as advanced sorting or filtering options.
+
+---
+
+3. TECHNICAL CONSIDERATIONS:
+
+Recommended Technology Stack:
+- Frontend: React.js (for a dynamic and user-friendly interface).
+- Backend: Node.js with Express (to handle API requests and business logic).
+- Database: PostgreSQL (for structured and relational data storage).
+- API Integration: REST or GraphQL APIs for querying caravan park details and reviews.
+- Hosting: AWS or Google Cloud (to support scalability and reliability).
+- Version Control: Git for code repository.
+
+Architecture Suggestions:
+- Follow a microservices-based architecture to ensure scalability and modularity.
+- Use client-server communication with RESTful APIs to separate the frontend and backend services.
+- Use a Content Delivery Network (CDN) like Cloudflare for faster content delivery.
+- Incorporate caching mechanisms (e.g., Redis or Memcached) to improve query speed and response times.
+- Implement third-party integrations for caravan park reviews and star ratings (such as Google Maps APIs or holiday resources APIs).
+
+Data Models Needed:
+1. Caravan Park:
+   - Fields: Park_ID (Primary Key), Name, Address, Latitude, Longitude, Phone, Website URL, Dog_Friendly (boolean), Star_Rating, Pricing, Amenities, Beach_Distance, Last_Updated.
+2. User Search Query:
+   - Fields: Query_ID (Primary Key), Search_Criteria (JSON), Timestamp, User_IP.
+3. Reviews:
+   - Fields: Review_ID (Primary Key), Park_ID (Foreign Key), User_Name, Rating, Review_Text, Timestamp.
+
+---
+
+4. USER INTERFACE REQUIREMENTS:
+
+Key Screens & Pages:
+1. Home Page:
+   - A search form for entering caravan requirements (e.g., location range, campervan size, dog-friendly status).
+2. Results Page:
+   - A list of search results with park names, ratings, pricing, and summary details.
+   - Filters for sorting results by rating, pricing, or proximity to the beach.
+3. Park Details Page:
+   - Detailed information about a selected caravan park, including all criteria, amenities, and a direct link to the park's website.
+4. Error Page:
+   - Display an appropriate message when no parks match the user's criteria or if an error occurs.
+
+Input Requirements:
+- Search form fields:
+  - Campervan dimensions (Length, Width)
+  - Dog-friendly filter (checkbox)
+  - Location range (fixed to Wollongong and Batemans Bay)
+  - Keywords or additional filtering options (optional).
+  
+Output Requirements:
+- Results Page: Present parks with Name, Rating, Pricing, Proximity to Beach, and Dog-Friendly status.
+- Detail Page: Provide detailed park information with user review highlights.
+
+---
+
+5. TESTING REQUIREMENTS:
+
+Test Scenarios:
+1. Functional Testing:
+   - Verify search functionality for various valid queries.
+   - Ensure no parks outside the criteria are displayed.
+   - Validate the links and updates are operational.
+
+2. Usability Testing:
+   - Test website on multiple devices (mobile, desktop).
+3. Performance Testing (under load variations).
+
+Edge Cases:
+- Empty inputs or when resorts don't return.
+

@@ -1,6 +1,6 @@
 # Environment variables
 .env
-
+.env.example
 # Python
 __pycache__/
 *.py[cod]
@@ -20,3 +20,16 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Build and Distribution
+build/
+dist/
+*.egg-info/
+
+# Tooling and Configs
+.codellm/
+*.code-workspace
+
+# Logs and Temporary Files
+*.log
+test.txt

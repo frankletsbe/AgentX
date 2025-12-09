@@ -18,10 +18,15 @@ class ManagerAgent:
         self.tester = TesterAgent()
         self.ux = UXAgent()
         self.max_iterations = 3
-        self.requirements_dir = Path(__file__).parent.parent / "requirements"
+        # Ensure exact casing for Requirements folder
+        self.requirements_dir = Path(__file__).parent.parent / "Requirements"
         
     def load_available_requirements(self) -> List[Dict[str, Any]]:
         requirements = []
+        # Fallback to lowercase 'requirements' if 'Requirements' doesn't exist
+        if not self.requirements_dir.exists():
+             self.requirements_dir = Path(__file__).parent.parent / "requirements"
+
         if not self.requirements_dir.exists():
             print(f"[WARNING] Requirements directory not found: {self.requirements_dir}")
             return requirements
@@ -59,8 +64,11 @@ class ManagerAgent:
             if 'role' in data:
                 print(f"   Role: {data['role'][:80]}...")
             if 'task' in data:
-                task_preview = data['task'].strip()[:100].replace('\n', ' ')
+                task_preview = str(data['task']).strip()[:100].replace('\n', ' ')
                 print(f"   Task: {task_preview}...")
+            if 'requirements' in data:
+                req_preview = str(data['requirements'])[:100].replace('\n', ' ')
+                print(f"   Requirements: {req_preview}...")
 
         print("\n" + "="*80)
 
@@ -74,7 +82,12 @@ class ManagerAgent:
                 choice_idx = int(choice) - 1
                 if 0 <= choice_idx < len(requirements):
                     selected = requirements[choice_idx]
+
+                    output_folder_name = Path(selected['filename']).stem
+                    selected['output_folder'] = output_folder_name
+
                     print(f"\n[MANAGER] Selected: {selected['filename']}")
+                    print(f"[MANAGER] Output folder: {output_folder_name}/")
                     return selected
                 else:
                     print(f"[ERROR] Please enter a number between 1 and {len(requirements)}")
@@ -89,19 +102,39 @@ class ManagerAgent:
         print("DEVELOPMENT TEAM WORKFLOW")
         print("="*80)
 
+        output_folder = None
+        full_context = ""
+
         if requirement_data:
             print(f"\n[MANAGER] Using requirement from: {requirement_data.get('filename', 'YAML file')}")
             data = requirement_data.get('data', {})
 
+            output_folder = requirement_data.get('output_folder')
+            if output_folder:
+                print(f"[MANAGER] Output will be saved to: {output_folder}/")
+
+            # Combine all fields into the requirement string for the Analyst
+            full_context = "FULL PROJECT REQUIREMENTS FROM YAML FILE:\n"
+            if 'role' in data:
+                full_context += f"ROLE:\n{data['role']}\n\n"
             if 'task' in data:
                 user_requirement = data['task'].strip()
-                print(f"\n[MANAGER] Task: {user_requirement[:200]}...")
-
+                full_context += f"TASK DESCRIPTION:\n{user_requirement}\n\n"
             if 'requirements' in data:
-                print(f"\n[MANAGER] Requirements: {data['requirements'][:200]}...")
+                reqs = data['requirements']
+                full_context += f"DETAILED REQUIREMENTS:\n{reqs}\n\n"
+            if 'input_format' in data:
+                full_context += f"INPUT FORMAT:\n{data['input_format']}\n\n"
+            if 'output_format' in data:
+                full_context += f"OUTPUT FORMAT:\n{data['output_format']}\n\n"
+            if 'tools_description' in data:
+                full_context += f"TOOLS DESCRIPTION:\n{data['tools_description']}\n\n"
 
-            if 'role' in data:
-                print(f"\n[MANAGER] Role: {data['role']}")
+            # Use the combined context as the actual prompt, falling back to user_requirement if manual entry
+            prompt_requirement = full_context if full_context else user_requirement
+
+        else:
+            prompt_requirement = user_requirement
 
         if not user_requirement:
             print("\n[ERROR] No requirement provided.")
@@ -109,14 +142,15 @@ class ManagerAgent:
 
         print("\n[MANAGER] Delegating to Business Analyst...")
         print("-"*80)
-        analyst_result = self.analyst.analyze_requirements(user_requirement)
+        # Pass the rich context to the analyst
+        analyst_result = self.analyst.analyze_requirements(prompt_requirement)
         specification = analyst_result["specification"]
         print(f"\n[ANALYST] Specification created:")
         print(specification[:500] + "..." if len(specification) > 500 else specification)
         
         iteration = 1
-        ux_feedback = None
-        test_feedback = None
+        ux_feedback = ""
+        test_feedback = ""
         final_code = None
         
         while iteration <= self.max_iterations:
@@ -132,8 +166,7 @@ class ManagerAgent:
                 test_feedback=test_feedback
             )
             code = dev_result["code"]
-            print(f"\n[DEVELOPER] Code generated:")
-            print(code[:500] + "..." if len(code) > 500 else code)
+            print(f"\n[DEVELOPER] Code generated (Length: {len(code)} chars)")
             
             print("\n[MANAGER] Delegating to UX Designer for review...")
             print("-"*80)
@@ -160,31 +193,46 @@ class ManagerAgent:
         
         if iteration > self.max_iterations:
             print(f"\n[MANAGER] Maximum iterations reached. Using latest version.")
-            final_code = code
-        
+            final_code = final_code or code
+
         return {
             "requirement": user_requirement,
             "specification": specification,
             "final_code": final_code,
             "ux_feedback": ux_feedback,
             "test_feedback": test_feedback,
-            "iterations": iteration
+            "iterations": iteration - 1 if iteration <= self.max_iterations else self.max_iterations,
+            "output_folder": output_folder
         }
     
     def _is_feedback_positive(self, ux_feedback: str, test_feedback: str) -> bool:
-        positive_indicators = [
-            "approved", "looks good", "excellent", "well done",
-            "no issues", "passes", "acceptable", "ready"
-        ]
+        """
+        Determines if the feedback indicates the code is ready.
+        Improved logic to avoid false negatives on phrases like 'no issues found'.
+        """
+        combined = (ux_feedback + "\n" + test_feedback).lower()
         
-        negative_indicators = [
-            "bug", "error", "issue", "problem", "fix", "improve",
-            "missing", "incorrect", "fails", "critical"
-        ]
+        # Immediate disqualifiers (Strong negative signals)
+        blockers = ["critical error", "syntax error", "fatal", "not working", "code is incomplete"]
+        for b in blockers:
+            if b in combined:
+                return False
+
+        # Positive indicators that suggest approval
+        approvals = ["approved", "looks good", "no issues found", "passes all", "excellent", "ready for production"]
         
-        combined_feedback = (ux_feedback + " " + test_feedback).lower()
+        # Count approvals
+        approval_score = sum(1 for indicator in approvals if indicator in combined)
         
-        has_positive = any(indicator in combined_feedback for indicator in positive_indicators)
-        has_negative = any(indicator in combined_feedback for indicator in negative_indicators)
+        # If we have strong approvals and no critical blockers, we are good.
+        # We can also check if the word "issue" appears ONLY in the context of "no issues"
         
-        return has_positive and not has_negative
+        if approval_score >= 1:
+            return True
+            
+        # Fallback: if it's just 'issues' generic check (legacy logic but safer)
+        # If "issue" is present, we check if it is preceded by "no "
+        if "issue" in combined and "no issues" not in combined:
+            return False
+            
+        return True

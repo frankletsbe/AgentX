@@ -3,15 +3,13 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from typing import Dict, Any
-from agent_manager import create_agent, CustomInferenceClientModel
-from constants import MODEL_NAME, SEARCH_PROVIDER
-
+from agent_manager import create_agent
+from constants import PLANNING_MODEL_NAME
 
 class AnalystAgent:
     def __init__(self):
-        client = CustomInferenceClientModel(MODEL_NAME, provider=SEARCH_PROVIDER)
-        from smolagents import CodeAgent
-        self.agent = CodeAgent(model=client, tools=[])
+        # Business Analyst uses the PLANNING model
+        self.agent = create_agent(tool_names=[], model_id=PLANNING_MODEL_NAME)
         self.role = "Business Analyst"
         
     def analyze_requirements(self, user_requirement: str) -> Dict[str, Any]:
@@ -52,6 +50,5 @@ Provide a comprehensive specification document in a structured format."""
         
         return {
             "role": self.role,
-            "specification": str(response),
-            "original_requirement": user_requirement
+            "specification": str(response)
         }

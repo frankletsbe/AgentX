@@ -2,8 +2,8 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from constants import ConfigurationError
-from agent_manager import initialize_huggingface
+from agent_constants import ConfigurationError
+from agent_manager import initialize_provider
 from manager_agent import ManagerAgent
 
 
@@ -60,7 +60,7 @@ def main() -> None:
 
     try:
         print("\n[MANAGER] Initializing development team...")
-        initialize_huggingface()
+        initialize_provider()
 
         manager = ManagerAgent()
 
@@ -99,10 +99,16 @@ def main() -> None:
         print(f"\nFinal Code:\n")
         print(result["final_code"])
 
-        save_option = input("\n\nWould you like to save all deliverables? (y/n): ").strip().lower()
-        if save_option == 'y':
-            output_dir = input("Enter output directory name (default: 'output'): ").strip() or "output"
-            save_deliverables(result, output_dir)
+        output_folder = result.get("output_folder")
+
+        if output_folder:
+            print(f"\n[MANAGER] Automatically saving deliverables to '{output_folder}/' folder...")
+            save_deliverables(result, output_folder)
+        else:
+            save_option = input("\n\nWould you like to save all deliverables? (y/n): ").strip().lower()
+            if save_option == 'y':
+                output_dir = input("Enter output directory name (default: 'output'): ").strip() or "output"
+                save_deliverables(result, output_dir)
 
     except ConfigurationError as e:
         print(f"\n❌ Configuration Error: {e}")

@@ -3,15 +3,13 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from typing import Dict, Any
-from agent_manager import CustomInferenceClientModel
-from constants import MODEL_NAME, SEARCH_PROVIDER
-
+from agent_manager import create_agent
+from constants import AI_MODEL_NAME
 
 class DeveloperAgent:
     def __init__(self):
-        client = CustomInferenceClientModel(MODEL_NAME, provider=SEARCH_PROVIDER)
-        from smolagents import CodeAgent
-        self.agent = CodeAgent(model=client, tools=[])
+        # Developer uses the Coding/AI model
+        self.agent = create_agent(tool_names=[], model_id=AI_MODEL_NAME)
         self.role = "Software Developer"
         
     def develop_code(self, specification: str, ux_feedback: str = None, test_feedback: str = None) -> Dict[str, Any]:

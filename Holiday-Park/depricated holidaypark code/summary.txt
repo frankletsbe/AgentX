@@ -1,0 +1,16 @@
+================================================================================
+DEVELOPMENT SUMMARY
+================================================================================
+
+Original Requirement:
+"Build a webpage that finds the best value for money holiday caravan park in NSW South Coast for a campervan, 6 meter length by 2 meter width
+(between Wollongong and Batemans Bay) that accepts dogs all year round 
+and is located near a beach. The park should offer cabins or powered sites"
+
+Iterations Completed: 0
+
+Deliverables:
+- specification.txt: Detailed specification document
+- final_code.py: Final application code
+- ux_feedback.txt: UX designer's feedback
+- test_feedback.txt: QA tester's feedback

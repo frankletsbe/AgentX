@@ -1,0 +1,22 @@
+task: |
+  Create a simple web application that allows users to manage a todo list.
+  Users should be able to add, view, and delete todo items.
+
+requirements: |
+  - Create a Flask web application
+  - Implement REST API endpoints for todo management
+  - Store todos in memory (no database required)
+  - Include proper error handling
+  - Follow Python best practices and PEP 8
+
+input_format:
+  - User accesses web interface or API endpoints
+  - User submits todo item via form or JSON payload
+
+output_format:
+  - Web interface displaying todo list
+  - API responses in JSON format
+  - Success/error messages for user actions
+
+tools_description: |
+  - WebSearchTool: Research Flask best practices and examples

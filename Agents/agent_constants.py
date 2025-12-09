@@ -18,93 +18,22 @@ HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "Qwen/Qwen2.5-Coder-32B-Instruct")
 HF_SEARCH_PROVIDER = os.getenv("HF_SEARCH_PROVIDER", "openai")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-AI_MODEL_NAME = os.getenv("AI_MODEL_NAME", "Qwen/Qwen3-72B-Instruct-AWQ")
-PLANNING_MODEL_NAME = os.getenv("PLANNING_MODEL_NAME", "Qwen/Qwen3-72B-Instruct-AWQ")
+AI_MODEL_NAME = os.getenv("AI_MODEL_NAME", "gpt-4o")
 AI_SEARCH_PROVIDER = os.getenv("AI_SEARCH_PROVIDER", "openai")
 AI_TOKEN = os.getenv("AI_TOKEN")
 
-# Set defaults based on provider, but these can be overridden by specific agents
-MODEL_NAME = HF_MODEL_NAME if INFERENCE_PROVIDER == "huggingface" else AI_MODEL_NAME
-SEARCH_PROVIDER = HF_SEARCH_PROVIDER if INFERENCE_PROVIDER == "huggingface" else AI_SEARCH_PROVIDER
-API_TOKEN = HF_TOKEN if INFERENCE_PROVIDER == "huggingface" else AI_TOKEN
+CODING_MODEL_NAME = HF_MODEL_NAME if INFERENCE_PROVIDER == "huggingface" else AI_MODEL_NAME
+CODING_SEARCH_PROVIDER = HF_SEARCH_PROVIDER if INFERENCE_PROVIDER == "huggingface" else AI_SEARCH_PROVIDER
+CODING_API_TOKEN = HF_TOKEN if INFERENCE_PROVIDER == "huggingface" else AI_TOKEN
 
-# Validate that API key is set for Abacus provider
-if INFERENCE_PROVIDER == "abacus" and not API_TOKEN:
-    raise ConfigurationError("ABACUS_API_KEY environment variable is required for Abacus provider. Please set it in your .env file.")
-
+PLANNING_MODEL_NAME = os.getenv("PLANNING_MODEL_NAME", "gpt-4o")
 
 AVAILABLE_TOOLS = {
-    "holiday_park_criteria": "tools.holiday_park_criteria",
-    "prompt_builder": "tools.prompt_builder",
     "WebSearchTool": "smolagents.WebSearchTool",
     "DuckDuckGoSearchTool": "smolagents.DuckDuckGoSearchTool"
 }
 
-TYPE_MAP = {
-    "site": "site",
-    "camping": "site",
-    "campsite": "site",
-    "camping site": "site",
-    "caravan": "site",
-    "caravan site": "site",
-    "van site": "site",
-    "caravan park": "site",
-    "holiday park": "site",
-    "holiday park site": "site",
-    "powered site": "site",
-    "unpowered site": "site",
-    "cabin": "cabin",
-    "cabins": "cabin",
-    "villa": "cabin",
-    "cottage": "cabin",
-    "bungalow": "cabin",
-    "chalet": "cabin",
-    "lodge": "cabin",
-    "ensuite": "ensuite",
-    "ensuite site": "ensuite"
-}
 
-FEATURE_MAP = {
-    "pool": "pool",
-    "swimming pool": "pool",
-    "water park": "water_park",
-    "slide": "water_park",
-    "slides": "water_park",
-    "water slide": "water_park",
-    "splash": "splash_park",
-    "splash park": "splash_park",
-    "pillow": "jumping_pillow",
-    "jumping pillow": "jumping_pillow",
-    "playground": "playground",
-    "play ground": "playground",
-    "kids club": "kids_club",
-    "activity": "kids_club",
-    "activities": "kids_club",
-    "dog": "pet_friendly",
-    "pet": "pet_friendly",
-    "pets": "pet_friendly",
-    "dog friendly": "pet_friendly",
-    "pet friendly": "pet_friendly",
-    "wifi": "wifi",
-    "wi-fi": "wifi",
-    "internet": "wifi",
-    "beach": "beach_access",
-    "beach access": "beach_access",
-    "store": "kiosk",
-    "kiosk": "kiosk",
-    "shop": "kiosk",
-    "convenience store": "kiosk",
-    "bbq": "bbq",
-    "barbecue": "bbq",
-    "camp kitchen": "camp_kitchen",
-    "kitchen": "camp_kitchen",
-    "laundry": "laundry",
-    "dump point": "dump_point",
-    "fire": "fire_pit",
-    "fire pit": "fire_pit",
-    "fires": "fire_pit",
-    "campfire": "fire_pit"
-}
 
 HUGGINGFACE_COMPATIBLE_MODELS = [
     "Qwen/Qwen2.5-Coder-32B-Instruct",
@@ -120,39 +49,44 @@ ABACUS_COMPATIBLE_MODELS = [
     "gpt-4o-mini",
     "gpt-4",
     "gpt-4-turbo",
+    "gpt-3.5-turbo",
     "claude-3-5-sonnet-20241022",
     "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
-    "gemini-1.5-pro",
-    "gemini-1.5-flash",
+    "claude-3-haiku-20240307",
 ]
 
-
 def validate_env_variables():
-    """Validate that required environment variables are set."""
+    """Validate that required environment variables are set based on provider."""
     if INFERENCE_PROVIDER not in ["huggingface", "abacus"]:
-        raise ConfigurationError(f"Invalid INFERENCE_PROVIDER: {INFERENCE_PROVIDER}")
-        
+        raise ConfigurationError(
+            f"Invalid INFERENCE_PROVIDER: {INFERENCE_PROVIDER}. "
+            "Must be 'huggingface' or 'abacus'"
+        )
+
     if INFERENCE_PROVIDER == "huggingface":
         if not HF_TOKEN:
             raise ConfigurationError(
                 "HF_TOKEN not found in environment variables. "
                 "Please add it to your .env file."
             )
-            
+
         if HF_MODEL_NAME not in HUGGINGFACE_COMPATIBLE_MODELS:
-            # Check if likely intended to be HF model
-            if not any(x in HF_MODEL_NAME for x in ["Qwen", "Llama", "Mistral"]):
-                 # Verify user didn't put an OpenAI model here by mistake
-                pass
-                
+            if any(model_prefix in HF_MODEL_NAME.lower() for model_prefix in ["gpt", "claude"]):
+                raise ConfigurationError(
+                    f"Model '{HF_MODEL_NAME}' is not available on Hugging Face.\n"
+                    f"This appears to be an OpenAI or Anthropic model.\n\n"
+                    f"To use this model:\n"
+                    f"  1. Change INFERENCE_PROVIDER to 'abacus' in your .env file\n"
+                    f"  2. Ensure AI_TOKEN is set with your Abacus.AI API key\n\n"
+                    f"Or use a Hugging Face model like:\n"
+                    f"  - Qwen/Qwen2.5-Coder-32B-Instruct\n"
+                    f"  - meta-llama/Llama-3.3-70B-Instruct\n"
+                    f"  - mistralai/Mistral-7B-Instruct-v0.2"
+                )
             print(f"⚠️  Warning: Model '{HF_MODEL_NAME}' not in verified compatibility list")
             print(f"   Attempting to use it anyway. If it fails, try a verified model.")
-            
-        if HF_SEARCH_PROVIDER not in ["openai", "serper", "google"]:
-            # Informational warning
-            pass
-            
+
         print("✓ Environment variables loaded successfully")
         print(f"  - Provider: Hugging Face")
         print(f"  - Model: {HF_MODEL_NAME}")
@@ -164,15 +98,14 @@ def validate_env_variables():
                 "AI_TOKEN not found in environment variables. "
                 "Please add it to your .env file."
             )
-            
+
         if AI_MODEL_NAME not in ABACUS_COMPATIBLE_MODELS:
             print(f"⚠️  Warning: Model '{AI_MODEL_NAME}' not in verified compatibility list")
             print(f"   Attempting to use it anyway. If it fails, try a verified model.")
 
         print("✓ Environment variables loaded successfully")
         print(f"  - Provider: Abacus.AI")
-        print(f"  - Coding Model: {AI_MODEL_NAME}")
-        print(f"  - Planning Model: {PLANNING_MODEL_NAME}")
+        print(f"  - Model: {AI_MODEL_NAME}")
 
 
 def get_output_folder(requirement_filename: str = None) -> Path:

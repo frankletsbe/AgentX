@@ -3,15 +3,13 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from typing import Dict, Any
-from agent_manager import CustomInferenceClientModel
-from constants import MODEL_NAME, SEARCH_PROVIDER
-
+from agent_manager import create_agent
+from constants import PLANNING_MODEL_NAME
 
 class UXAgent:
     def __init__(self):
-        client = CustomInferenceClientModel(MODEL_NAME, provider=SEARCH_PROVIDER)
-        from smolagents import CodeAgent
-        self.agent = CodeAgent(model=client, tools=[])
+        # UX Designer uses the PLANNING model
+        self.agent = create_agent(tool_names=[], model_id=PLANNING_MODEL_NAME)
         self.role = "UX Designer"
         
     def review_ux(self, code: str, specification: str) -> Dict[str, Any]:
@@ -49,16 +47,12 @@ Your task is to review the user experience and interface design:
 
 5. DESIGN RECOMMENDATIONS:
    - Suggest UI/UX improvements
-   - Recommend better user interactions
-   - Propose enhanced user feedback mechanisms
-   - Rate overall UX (1-10)
 
-Provide detailed UX feedback with specific recommendations for the developer."""
+Provide constructive feedback to the developer."""
 
         response = self.agent.run(task=prompt)
         
         return {
             "role": self.role,
-            "feedback": str(response),
-            "code_reviewed": code
+            "feedback": str(response)
         }
