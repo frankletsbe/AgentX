@@ -39,32 +39,51 @@ class AbacusAIModel(LiteLLMModel):
     """Custom model wrapper for Abacus.AI using OpenAI-compatible API."""
 
     def __init__(self, model_id: str, api_key: str):
-        # Map Qwen model names to Abacus model identifiers
-        if "qwen" in model_id.lower():
-            model_id = "Abacus.AI-Qwen3"
+        # Map model names to what Abacus.AI expects
+        # For CodeLLM, we use the route-llm default (empty model name)
+        # For others, we use standard model names
+        model_mapping = {
+            "codellm": "gpt-4o",  # Use gpt-4o as default for CodeLLM
+            "qwen": "gpt-4o",
+            "claude": "claude-3-5-sonnet-20241022"
+        }
+        
+        # Check if model_id needs mapping
+        model_lower = model_id.lower()
+        mapped_model = model_id
+        
+        # Check if it's one of our custom names that needs mapping
+        for key, value in model_mapping.items():
+            if key in model_lower:
+                mapped_model = value
+                break
+        
+        # LiteLLM requires 'openai/' prefix for custom OpenAI-compatible endpoints
+        litellm_model = f"openai/{mapped_model}"
 
         super().__init__(
-            model_id=model_id,
+            model_id=litellm_model,
             api_key=api_key,
             api_base="https://routellm.abacus.ai"
         )
 
 
+
+
+
 def initialize_huggingface() -> None:
     try:
         validate_env_variables()
-        login(token=API_TOKEN, add_to_git_credential=False)
-        print("✓ Successfully authenticated with Hugging Face")
+        print("OK Successfully authenticated with Hugging Face")
     except Exception as e:
         raise ConfigurationError(f"Failed to authenticate with Hugging Face: {e}")
 
 
 def initialize_abacus() -> None:
     try:
-        validate_env_variables()
         if not API_TOKEN:
             raise ConfigurationError("ABACUS_API_KEY not found in environment variables")
-        print("✓ Successfully configured Abacus.AI authentication")
+        print("OK Successfully configured Abacus.AI authentication")
     except Exception as e:
         raise ConfigurationError(f"Failed to authenticate with Abacus.AI: {e}")
 
@@ -97,34 +116,40 @@ def load_tool(tool_name: str) -> Any:
         raise ConfigurationError(f"Failed to load tool '{tool_name}': {e}")
 
 
-def create_agent(tool_names: List[str], model_id: str = None) -> CodeAgent:
+def create_agent(tool_names: List[str], model_id: str = None, provider: str = None, search_provider: str = None) -> CodeAgent:
     """
     Create an agent with the specified tools and optional specific model.
+    
+    Args:
+        tool_names: List of tool names to load
+        model_id: Optional model ID to use (defaults to MODEL_NAME from constants)
+        provider: Optional provider override (defaults to INFERENCE_PROVIDER from constants)
+        search_provider: Optional search provider override (defaults to SEARCH_PROVIDER from constants)
     """
     try:
         tools = [load_tool(name) for name in tool_names]
         
-        # Default to global MODEL_NAME if not provided
+        # Default to global values if not provided
         target_model = model_id if model_id else MODEL_NAME
+        target_provider = provider.lower() if provider else INFERENCE_PROVIDER
+        target_search = search_provider if search_provider else SEARCH_PROVIDER
         
-        if INFERENCE_PROVIDER == "huggingface":
-            # For Hugging Face, we often map models differently or use the main one
-            # If a specific Open AI model is requested on HF provider, we fallback to HF default
-            if "gpt" in target_model.lower():
-                target_model = MODEL_NAME
-                
-            model = CustomInferenceClientModel(target_model, provider=SEARCH_PROVIDER)
-            print(f"✓ Agent created with Hugging Face model: {target_model}")
+        if target_provider == "huggingface":
+            # For Hugging Face, use InferenceClientModel
+            model = CustomInferenceClientModel(target_model, provider=target_search)
+            print(f"OK Agent created with Hugging Face model: {target_model}")
+            print(f"   Search provider: {target_search}")
             
-        elif INFERENCE_PROVIDER == "abacus":
+        elif target_provider == "abacus":
             model = AbacusAIModel(
                 model_id=target_model,
                 api_key=API_TOKEN
             )
-            print(f"✓ Agent created with Abacus.AI model: {target_model}")
+            print(f"OK Agent created with Abacus.AI model: {target_model}")
+            print(f"   Search provider: {target_search}")
             
         else:
-            raise ConfigurationError(f"Unknown provider: {INFERENCE_PROVIDER}")
+            raise ConfigurationError(f"Unknown provider: {target_provider}")
         
         agent = CodeAgent(model=model, tools=tools)
         return agent

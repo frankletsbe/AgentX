@@ -1,5 +1,23 @@
-# Tool configuration
+# ============================================================================
+# TOOL CONFIGURATION
+# ============================================================================
+# List of tools to enable for the agent
 enabled_tools:
   - holiday_park_criteria
   - prompt_builder
   - WebSearchTool
+
+# ============================================================================
+# OPTIONAL: RUNTIME CONFIGURATION OVERRIDES
+# ============================================================================
+# These settings override the .env file values if specified
+# Leave commented out to use .env defaults
+
+# Provider override (options: huggingface, abacus)
+# INFERENCE_PROVIDER: abacus
+
+# Model name override
+# MODEL_NAME: CodeLLM
+
+# Search provider override (options: openai, serper, google, duckduckgo)
+# SEARCH_PROVIDER: openai

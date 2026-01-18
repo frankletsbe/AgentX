@@ -95,32 +95,22 @@ class YAMLConfigLoader:
     @staticmethod
     def get_config_value(file_path: Path, key: str, default: str = "") -> str:
         """
-        Get a required value from a YAML configuration file.
+        Get a value from a YAML configuration file.
         
         Args:
             file_path: Path to the YAML file
             key: Configuration key to retrieve
+            default: Default value if key not found
             
         Returns:
             Configuration value as string
             
         Raises:
-            ConfigurationError: If key is missing or file is invalid
+            ConfigurationError: If file is invalid
         """
-        
-       
         config = YAMLConfigLoader._load_yaml_file(file_path)
         value = config.get(key, default)
         return str(value) if value is not None else default
-    
-        
-        
-        if not value:
-            raise ConfigurationError(
-                f"Required configuration '{key}' not found in {file_path}"
-            )
-        
-        return str(value)
     
     @staticmethod
     def get_config_list(file_path: Path, key: str, default: Optional[List[str]] = None) -> List[str]:
@@ -141,7 +131,23 @@ class YAMLConfigLoader:
         config = YAMLConfigLoader._load_yaml_file(file_path)
         value = config.get(key, default)
         return value if isinstance(value, list) else default
-
-        config = YAMLConfigLoader._load_yaml_file(file_path)
-        value = config.get(key, default)
-        return value if isinstance(value, list) else default
+    
+    @staticmethod
+    def get_optional_config(file_path: Path, key: str) -> Optional[str]:
+        """
+        Get an optional configuration value that can override environment variables.
+        
+        Args:
+            file_path: Path to the YAML file
+            key: Configuration key to retrieve
+            
+        Returns:
+            Configuration value if present and not commented out, None otherwise
+        """
+        try:
+            config = YAMLConfigLoader._load_yaml_file(file_path)
+            value = config.get(key)
+            # Return None if value is None, empty string, or explicitly set to null
+            return str(value) if value not in (None, "", "null") else None
+        except ConfigurationError:
+            return None
