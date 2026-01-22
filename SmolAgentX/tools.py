@@ -2,6 +2,7 @@
 
 from smolagents import tool
 from constants import TYPE_MAP
+import re
 
 def _clean_type(s: str) -> str:
     s = s.strip().lower()
@@ -35,13 +36,25 @@ def holiday_park_criteria(
     Raises:
         ValueError: If type is not recognized
     """
-    type_norm = TYPE_MAP.get(type.lower())
+    # Split by common delimiters: ' or ', ' and ', ', '
+    # We use regex to handle whitespace around separators
+    parts = re.split(r'\s+or\s+|\s+and\s+|,\s*', type, flags=re.IGNORECASE)
     
-    t = _clean_type(type)
-    type_norm = TYPE_MAP.get(t)
-    if not type_norm:
+    normalized_parts = []
+    for part in parts:
+        t = _clean_type(part)
+        if not t:
+            continue
+        type_norm = TYPE_MAP.get(t)
+        if type_norm:
+            normalized_parts.append(type_norm)
+    
+    if not normalized_parts:
         valid_types = ", ".join(sorted(set(TYPE_MAP.keys())))
         raise ValueError(f"Invalid type '{type}'. Must be one of: {valid_types}")
+    
+    # Use unique normalized types joined by ' or '
+    type_norm = " or ".join(sorted(set(normalized_parts)))
     
     criteria = (
         f"State: {state}, "

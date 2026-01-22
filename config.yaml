@@ -6,6 +6,7 @@ enabled_tools:
   - holiday_park_criteria
   - prompt_builder
   - WebSearchTool
+  - VisitWebpageTool
 
 # ============================================================================
 # OPTIONAL: RUNTIME CONFIGURATION OVERRIDES

@@ -1,43 +1,18 @@
 """Constants and custom exceptions for the Holiday Parks application."""
 
 from pathlib import Path
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
-
 PROJECT_ROOT = Path(__file__).parent
-OUTPUT_ROOT = PROJECT_ROOT / "output"
-CONFIG_FILE = PROJECT_ROOT / "config.yaml"
-PROMPT_FILE = PROJECT_ROOT / "holiday-park.yaml"
-PROMPT_TEMPLATE_FILE = PROJECT_ROOT / "template.yaml"
-
-INFERENCE_PROVIDER = os.getenv("INFERENCE_PROVIDER", "abacus").lower()
-
-HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "Qwen/Qwen2.5-Coder-32B-Instruct")
-HF_SEARCH_PROVIDER = os.getenv("HF_SEARCH_PROVIDER", "openai")
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-AI_MODEL_NAME = os.getenv("AI_MODEL_NAME", "Qwen/Qwen3-72B-Instruct-AWQ")
-PLANNING_MODEL_NAME = os.getenv("PLANNING_MODEL_NAME", "Qwen/Qwen3-72B-Instruct-AWQ")
-AI_SEARCH_PROVIDER = os.getenv("AI_SEARCH_PROVIDER", "openai")
-AI_TOKEN = os.getenv("AI_TOKEN")
-
-# Set defaults based on provider, but these can be overridden by specific agents
-MODEL_NAME = HF_MODEL_NAME if INFERENCE_PROVIDER == "huggingface" else AI_MODEL_NAME
-SEARCH_PROVIDER = HF_SEARCH_PROVIDER if INFERENCE_PROVIDER == "huggingface" else AI_SEARCH_PROVIDER
-API_TOKEN = HF_TOKEN if INFERENCE_PROVIDER == "huggingface" else AI_TOKEN
-
-# Validate that API key is set for Abacus provider
-if INFERENCE_PROVIDER == "abacus" and not API_TOKEN:
-    raise ConfigurationError("ABACUS_API_KEY environment variable is required for Abacus provider. Please set it in your .env file.")
-
+# We will import config inside functions that need it to avoid circular dependency
+# with config_manager.py which imports constants.py
 
 AVAILABLE_TOOLS = {
-    "holiday_park_criteria": "tools.holiday_park_criteria",
-    "prompt_builder": "tools.prompt_builder",
+    "holiday_park_criteria": "SmolAgentX.tools.holiday_park_criteria",
+    "prompt_builder": "SmolAgentX.tools.prompt_builder",
     "WebSearchTool": "smolagents.WebSearchTool",
-    "DuckDuckGoSearchTool": "smolagents.DuckDuckGoSearchTool"
+    "DuckDuckGoSearchTool": "smolagents.DuckDuckGoSearchTool",
+    "VisitWebpageTool": "smolagents.VisitWebpageTool"
 }
 
 TYPE_MAP = {
@@ -52,7 +27,10 @@ TYPE_MAP = {
     "holiday park": "site",
     "holiday park site": "site",
     "powered site": "site",
+    "powered sites": "site",
     "unpowered site": "site",
+    "unpowered sites": "site",
+    "sites": "site",
     "cabin": "cabin",
     "cabins": "cabin",
     "villa": "cabin",
@@ -128,53 +106,6 @@ ABACUS_COMPATIBLE_MODELS = [
 ]
 
 
-def validate_env_variables():
-    """Validate that required environment variables are set."""
-    if INFERENCE_PROVIDER not in ["huggingface", "abacus"]:
-        raise ConfigurationError(f"Invalid INFERENCE_PROVIDER: {INFERENCE_PROVIDER}")
-        
-    if INFERENCE_PROVIDER == "huggingface":
-        if not HF_TOKEN:
-            raise ConfigurationError(
-                "HF_TOKEN not found in environment variables. "
-                "Please add it to your .env file."
-            )
-            
-        if HF_MODEL_NAME not in HUGGINGFACE_COMPATIBLE_MODELS:
-            # Check if likely intended to be HF model
-            if not any(x in HF_MODEL_NAME for x in ["Qwen", "Llama", "Mistral"]):
-                 # Verify user didn't put an OpenAI model here by mistake
-                pass
-                
-            print(f"⚠️  Warning: Model '{HF_MODEL_NAME}' not in verified compatibility list")
-            print(f"   Attempting to use it anyway. If it fails, try a verified model.")
-            
-        if HF_SEARCH_PROVIDER not in ["openai", "serper", "google"]:
-            # Informational warning
-            pass
-            
-        print("✓ Environment variables loaded successfully")
-        print(f"  - Provider: Hugging Face")
-        print(f"  - Model: {HF_MODEL_NAME}")
-        print(f"  - Search Provider: {HF_SEARCH_PROVIDER}")
-
-    elif INFERENCE_PROVIDER == "abacus":
-        if not AI_TOKEN:
-            raise ConfigurationError(
-                "AI_TOKEN not found in environment variables. "
-                "Please add it to your .env file."
-            )
-            
-        if AI_MODEL_NAME not in ABACUS_COMPATIBLE_MODELS:
-            print(f"⚠️  Warning: Model '{AI_MODEL_NAME}' not in verified compatibility list")
-            print(f"   Attempting to use it anyway. If it fails, try a verified model.")
-
-        print("✓ Environment variables loaded successfully")
-        print(f"  - Provider: Abacus.AI")
-        print(f"  - Coding Model: {AI_MODEL_NAME}")
-        print(f"  - Planning Model: {PLANNING_MODEL_NAME}")
-
-
 def get_output_folder(requirement_filename: str = None) -> Path:
     """
     Get the output folder path based on requirement filename.
@@ -185,10 +116,12 @@ def get_output_folder(requirement_filename: str = None) -> Path:
     Returns:
         Path object for the output folder
     """
+    from config_manager import config
+    output_root = config.output_root # Use the output_root from the Config instance
     if requirement_filename:
         folder_name = Path(requirement_filename).stem
-        return OUTPUT_ROOT / folder_name
-    return OUTPUT_ROOT / "default"
+        return output_root / folder_name
+    return output_root / "default"
 
 
 class ConfigurationError(Exception):
